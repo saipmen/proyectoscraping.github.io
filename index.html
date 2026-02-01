@@ -297,18 +297,18 @@
         <div class="controles">
             <input type="text" id="subreddit" placeholder="Nombre de subreddit" style="flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 5px; font-size: 14px;">
             <input type="number" id="limit" placeholder="Numero de posts" value="10" min="1" max="100" style="width: 150px; padding: 10px; border: 1px solid #ddd; border-radius: 5px; font-size: 14px;">
-            <button id="btnCargar" onclick="cargarPosts()">Cargar Posts (Nivel 1)</button>
+            <button id="btnCargar" onclick="cargarPosts()">Cargar Posts</button>
             <span id="status" style="margin-left: 15px; color: #666;"></span>
         </div>
         
-        <!-- NIVEL 1: Lista de posts (SIEMPRE VISIBLE) -->
+        <!-- lista de posts-->
         <div class="seccion-titulo">NIVEL 1: Lista de Posts</div>
         <div id="posts-container" class="posts-container">
             <p style="color: #999; text-align: center; padding: 40px;">
             </p>
         </div>
         
-        <!-- NIVEL 2: Detalle del post -->
+        <!-- detalle del post -->
         <div id="nivel2-section" class="detail-section">
             <button class="back-btn" onclick="volverAlNivel1()">← Volver a Lista</button>
             <div class="seccion-titulo">NIVEL 2: Detalle del Post</div>
@@ -316,7 +316,7 @@
             <div class="detail-content" id="detail-content"></div>
         </div>
         
-        <!-- TABS: Mensajes / Árbol / JSON -->
+        <!-- tabs -->
         <div class="tabs-container">
             <div class="tab-buttons">
                 <button class="tab-btn active" onclick="mostrarTab('messages')">Mensajes de Red</button>
@@ -342,7 +342,7 @@
         let datosCompletos = {};
         
         function mostrarTab(tabName) {
-            // Ocultar todos los tabs
+
             document.querySelectorAll('.tab-content').forEach(tab => {
                 tab.classList.remove('active');
             });
@@ -350,7 +350,7 @@
                 btn.classList.remove('active');
             });
             
-            // Mostrar el tab seleccionado
+
             document.getElementById(tabName + '-tab').classList.add('active');
             event.target.classList.add('active');
         }
