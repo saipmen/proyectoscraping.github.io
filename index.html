@@ -544,11 +544,13 @@
                 addMessage('ERROR NIVEL 1: Timeout - no se recibió respuesta', 'error');
                 status.innerHTML = '<div class="error-msg">Timeout: no se recibió respuesta</div>';
                 container.innerHTML = '<p style="color: #999; text-align: center; padding: 40px;">Error al cargar datos</p>';
-            }, 15000);
+            }, 20000);
             
             scriptElement = document.createElement('script');
             scriptElement.type = 'text/javascript';
             scriptElement.charset = 'utf-8';
+            scriptElement.async = true;
+            scriptElement.crossOrigin = 'anonymous';
             var url = 'https://www.reddit.com/r/' + subreddit + '.json?limit=' + limit + '&jsonp=' + callbackName;
             scriptElement.src = url;
             scriptElement.onerror = function() {
@@ -557,27 +559,34 @@
                 status.innerHTML = '<div class="error-msg">Error al cargar datos desde Reddit</div>';
                 container.innerHTML = '<p style="color: #999; text-align: center; padding: 40px;">Error al cargar datos</p>';
             };
-            document.body.appendChild(scriptElement);
+            var head = document.getElementsByTagName('head')[0] || document.documentElement;
+            head.appendChild(scriptElement);
         }
         
         function cargarDetalle(index, postId) {
-            const post = datosCompletos.nivel1.datos[index];
-            const nivel2 = document.getElementById('nivel2-section');
-            const detailHeader = document.getElementById('detail-header');
-            const detailContent = document.getElementById('detail-content');
+            var post = datosCompletos.nivel1.datos[index];
+            var nivel2 = document.getElementById('nivel2-section');
+            var detailHeader = document.getElementById('detail-header');
+            var detailContent = document.getElementById('detail-content');
             
             addMessage('SOLICITUD NIVEL 2: GET /r/programming/comments/' + postId, 'request');
             
-            detailHeader.innerHTML = `<h3>${escapeHtml(post.title)}</h3>`;
-            detailContent.innerHTML = `
-                <div class="post-meta" style="margin-bottom: 15px;">
-                    <strong>Autor:</strong> u/${post.author}<br>
-                    <strong>Publicado:</strong> ${new Date(post.created_utc * 1000).toLocaleString('es-ES')}<br>
-                    <strong>Puntos:</strong> ${post.score}<br>
-                    <strong>Comentarios:</strong> ${post.num_comments}<br>
-                </div>
-                ${post.selftext ? `<div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 15px; line-height: 1.6; white-space: pre-wrap;">${escapeHtml(post.selftext)}</div>` : '<p> </p>'}
-            `;
+            detailHeader.innerHTML = '<h3>' + escapeHtml(post.title) + '</h3>';
+            
+            var contentHTML = '<div class="post-meta" style="margin-bottom: 15px;">' +
+                '<strong>Autor:</strong> u/' + post.author + '<br>' +
+                '<strong>Publicado:</strong> ' + new Date(post.created_utc * 1000).toLocaleString('es-ES') + '<br>' +
+                '<strong>Puntos:</strong> ' + post.score + '<br>' +
+                '<strong>Comentarios:</strong> ' + post.num_comments + '<br>' +
+                '</div>';
+            
+            if (post.selftext) {
+                contentHTML += '<div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 15px; line-height: 1.6; white-space: pre-wrap;">' + escapeHtml(post.selftext) + '</div>';
+            } else {
+                contentHTML += '<p> </p>';
+            }
+            
+            detailContent.innerHTML = contentHTML;
             
             datosCompletos.nivel2 = {
                 post_id: post.id,
