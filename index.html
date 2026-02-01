@@ -319,9 +319,9 @@
         <!-- tabs -->
         <div class="tabs-container">
             <div class="tab-buttons">
-                <button class="tab-btn active" onclick="mostrarTab('messages')">Mensajes de Red</button>
-                <button class="tab-btn" onclick="mostrarTab('tree')">Arbol de Datos</button>
-                <button class="tab-btn" onclick="mostrarTab('json')">Texto Plano (JSON)</button>
+                <button class="tab-btn active" onclick="mostrarTab(event, 'messages')">Mensajes de Red</button>
+                <button class="tab-btn" onclick="mostrarTab(event, 'tree')">Arbol de Datos</button>
+                <button class="tab-btn" onclick="mostrarTab(event, 'json')">Texto Plano (JSON)</button>
             </div>
             
             <div id="messages-tab" class="tab-content active">
@@ -341,7 +341,7 @@
     <script>
         let datosCompletos = {};
         
-        function mostrarTab(tabName) {
+        function mostrarTab(event, tabName) {
 
             document.querySelectorAll('.tab-content').forEach(tab => {
                 tab.classList.remove('active');
@@ -487,11 +487,12 @@
                     
                     if (posts.length === 0) {
                         status.innerHTML = '<div class="error-msg">No se encontraron posts</div>';
+                        container.innerHTML = '<p style="color: #999; text-align: center; padding: 40px;">No se encontraron posts</p>';
                         return;
                     }
                     
                     datosCompletos.nivel1 = {
-                        subreddit: 'programming',
+                        subreddit: subreddit,
                         posts_count: posts.length,
                         timestamp: new Date().toISOString(),
                         datos: posts
@@ -516,25 +517,30 @@
                 } catch (err) {
                     addMessage('ERROR NIVEL 1: ' + err.message, 'error');
                     status.innerHTML = '<div class="error-msg">Error: ' + err.message + '</div>';
+                    container.innerHTML = '<p style="color: #999; text-align: center; padding: 40px;">Error al procesar datos</p>';
                 } finally {
-                    const script = document.querySelector(`script[src*="${callbackName}"]`);
-                    if (script) document.body.removeChild(script);
+                    if (scriptElement && scriptElement.parentNode) {
+                        scriptElement.parentNode.removeChild(scriptElement);
+                    }
                     delete window[callbackName];
                     btn.disabled = false;
                 }
             };
             
-            const script = document.createElement('script');
+            const scriptElement = document.createElement('script');
             const url = `https://www.reddit.com/r/${subreddit}.json?limit=${limit}&jsonp=${callbackName}`;
-            script.src = url;
-            script.onerror = () => {
+            scriptElement.src = url;
+            scriptElement.onerror = function() {
                 addMessage('ERROR NIVEL 1: Fallo al cargar desde Reddit', 'error');
-                status.innerHTML = '<div class="error-msg">Error al cargar datos</div>';
+                status.innerHTML = '<div class="error-msg">Error al cargar datos desde Reddit</div>';
+                container.innerHTML = '<p style="color: #999; text-align: center; padding: 40px;">Error al cargar datos</p>';
                 btn.disabled = false;
-                if (script.parentNode) document.body.removeChild(script);
+                if (scriptElement.parentNode) {
+                    scriptElement.parentNode.removeChild(scriptElement);
+                }
                 delete window[callbackName];
             };
-            document.body.appendChild(script);
+            document.body.appendChild(scriptElement);
         }
         
         function cargarDetalle(index, postId) {
