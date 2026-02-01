@@ -473,9 +473,27 @@
             document.getElementById('messages').innerHTML = '';
             addMessage('SOLICITUD NIVEL 1: GET /r/' + subreddit + '.json?limit=' + limit, 'request');
             
-            const callbackName = `callback_${Date.now()}`;
+            const callbackName = 'redditCallback_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+            let scriptElement = null;
+            let timeoutId = null;
+            
+            function cleanup() {
+                if (timeoutId) {
+                    clearTimeout(timeoutId);
+                    timeoutId = null;
+                }
+                if (scriptElement && scriptElement.parentNode) {
+                    scriptElement.parentNode.removeChild(scriptElement);
+                }
+                if (window[callbackName]) {
+                    delete window[callbackName];
+                }
+                btn.disabled = false;
+            }
             
             window[callbackName] = function(data) {
+                cleanup();
+                
                 try {
                     addMessage('RESPUESTA NIVEL 1: JSON recibido con ' + data.data.children.length + ' items', 'response');
                     
@@ -483,7 +501,7 @@
                         throw new Error('Formato inválido');
                     }
                     
-                    const posts = data.data.children.map(child => child.data);
+                    const posts = data.data.children.map(function(child) { return child.data; });
                     
                     if (posts.length === 0) {
                         status.innerHTML = '<div class="error-msg">No se encontraron posts</div>';
@@ -501,16 +519,16 @@
                     mostrarJSON(datosCompletos.nivel1);
                     document.getElementById('tree-container').innerHTML = mostrarArbol(datosCompletos.nivel1, 'nivel1', '', true, true);
                     
-                    container.innerHTML = posts.map((post, idx) => `
-                        <div class="post-card" onclick="cargarDetalle(${idx}, '${post.id}')">
-                            <div class="post-title">${escapeHtml(post.title)}</div>
-                            <div class="post-meta"> Por u/${post.author} en r/${post.subreddit}</div>
-                            <div class="post-stats">
-                                <span class="badge">Upvotes ${post.score}</span>
-                                <span class="badge">Comentarios ${post.num_comments}</span>
-                            </div>
-                        </div>
-                    `).join('');
+                    container.innerHTML = posts.map(function(post, idx) {
+                        return '<div class="post-card" onclick="cargarDetalle(' + idx + ', \'' + post.id + '\')">' +
+                            '<div class="post-title">' + escapeHtml(post.title) + '</div>' +
+                            '<div class="post-meta"> Por u/' + post.author + ' en r/' + post.subreddit + '</div>' +
+                            '<div class="post-stats">' +
+                                '<span class="badge">Upvotes ' + post.score + '</span>' +
+                                '<span class="badge">Comentarios ' + post.num_comments + '</span>' +
+                            '</div>' +
+                        '</div>';
+                    }).join('');
                     
                     status.innerHTML = '<div class="success-msg">' + posts.length + ' posts cargados</div>';
                     
@@ -518,27 +536,26 @@
                     addMessage('ERROR NIVEL 1: ' + err.message, 'error');
                     status.innerHTML = '<div class="error-msg">Error: ' + err.message + '</div>';
                     container.innerHTML = '<p style="color: #999; text-align: center; padding: 40px;">Error al procesar datos</p>';
-                } finally {
-                    if (scriptElement && scriptElement.parentNode) {
-                        scriptElement.parentNode.removeChild(scriptElement);
-                    }
-                    delete window[callbackName];
-                    btn.disabled = false;
                 }
             };
             
-            const scriptElement = document.createElement('script');
-            const url = `https://www.reddit.com/r/${subreddit}.json?limit=${limit}&jsonp=${callbackName}`;
+            timeoutId = setTimeout(function() {
+                cleanup();
+                addMessage('ERROR NIVEL 1: Timeout - no se recibió respuesta', 'error');
+                status.innerHTML = '<div class="error-msg">Timeout: no se recibió respuesta</div>';
+                container.innerHTML = '<p style="color: #999; text-align: center; padding: 40px;">Error al cargar datos</p>';
+            }, 15000);
+            
+            scriptElement = document.createElement('script');
+            scriptElement.type = 'text/javascript';
+            scriptElement.charset = 'utf-8';
+            var url = 'https://www.reddit.com/r/' + subreddit + '.json?limit=' + limit + '&jsonp=' + callbackName;
             scriptElement.src = url;
             scriptElement.onerror = function() {
+                cleanup();
                 addMessage('ERROR NIVEL 1: Fallo al cargar desde Reddit', 'error');
                 status.innerHTML = '<div class="error-msg">Error al cargar datos desde Reddit</div>';
                 container.innerHTML = '<p style="color: #999; text-align: center; padding: 40px;">Error al cargar datos</p>';
-                btn.disabled = false;
-                if (scriptElement.parentNode) {
-                    scriptElement.parentNode.removeChild(scriptElement);
-                }
-                delete window[callbackName];
             };
             document.body.appendChild(scriptElement);
         }
