@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<head>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: Arial, sans-serif;
+            background: #f5f5f5;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        h1 {
+            color: #ff4500;
+            margin-bottom: 20px;
+        }
+        
+        .controles {
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 5px;
+        }
+        
+        button {
+            background: #ff4500;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        
+        button:hover {
+            background: #e03d00;
+        }
+        
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+        }
+        
+        .seccion-titulo {
+            background: #f8f9fa;
+            padding: 10px 15px;
+            margin: 20px 0 10px 0;
+            border-left: 4px solid #ff4500;
+            font-weight: bold;
+        }
+        
+        /* NIVEL 1: Lista de posts */
+        .posts-container {
+            margin-bottom: 30px;
+        }
+        
+        .post-card {
+            border: 1px solid #ddd;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .post-card:hover {
+            background: #f8f9fa;
+            border-color: #ff4500;
+            box-shadow: 0 2px 8px rgba(255,69,0,0.2);
+        }
+        
+        .post-title {
+            font-size: 16px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 8px;
+        }
+        
+        .post-meta {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 5px;
+        }
+        
+        .post-stats {
+            display: flex;
+            gap: 15px;
+            font-size: 12px;
+            color: #999;
+        }
+        
+        .badge {
+            background: #ff4500;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 3px;
+        }
+        
+        /* NIVEL 2: Detalle del post */
+        .detail-section {
+            border: 2px solid #ff4500;
+            padding: 20px;
+            border-radius: 8px;
+            background: #fff;
+            margin-top: 20px;
+            display: none;
+        }
+        
+        .detail-section.active {
+            display: block;
+        }
+        
+        .detail-header {
+            background: #ff4500;
+            color: white;
+            padding: 15px;
+            margin: -20px -20px 20px -20px;
+            border-radius: 6px 6px 0 0;
+        }
+        
+        .detail-header h3 {
+            margin: 0;
+        }
+        
+        .back-btn {
+            margin-bottom: 15px;
+        }
+        
+        .detail-content {
+            line-height: 1.6;
+        }
+        
+        /* TABS */
+        .tabs-container {
+            margin-top: 30px;
+        }
+        
+        .tab-buttons {
+            display: flex;
+            gap: 0;
+            border-bottom: 2px solid #ddd;
+            margin-bottom: 0;
+        }
+        
+        .tab-btn {
+            background: #f8f9fa;
+            color: #333;
+            border: 1px solid #ddd;
+            border-bottom: none;
+            padding: 12px 20px;
+            cursor: pointer;
+            font-size: 14px;
+            border-radius: 5px 5px 0 0;
+            transition: all 0.3s;
+            margin-right: 2px;
+        }
+        
+        .tab-btn:hover {
+            background: #eee;
+        }
+        
+        .tab-btn.active {
+            background: white;
+            color: #ff4500;
+            border-bottom: 3px solid #ff4500;
+            font-weight: bold;
+        }
+        
+        .tab-content {
+            background: white;
+            border: 1px solid #ddd;
+            border-top: none;
+            padding: 20px;
+            border-radius: 0 0 5px 5px;
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        /* Messages */
+        .messages {
+            max-height: 400px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+        }
+        
+        .message {
+            padding: 8px;
+            margin-bottom: 5px;
+            border-left: 3px solid #ff4500;
+            padding-left: 10px;
+            color: #666;
+            background: #f8f9fa;
+        }
+        
+        .message.request {
+            border-left-color: #28a745;
+            color: #155724;
+        }
+        
+        .message.response {
+            border-left-color: #007bff;
+            color: #004085;
+        }
+        
+        .message.error {
+            border-left-color: #dc3545;
+            color: #721c24;
+        }
+        
+        /* Tree */
+        .tree {
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            line-height: 1.6;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        
+        .tree-item {
+            padding: 5px 0;
+            color: #333;
+        }
+        
+        .tree-item.parent {
+            cursor: pointer;
+            color: #ff4500;
+            font-weight: bold;
+        }
+        
+        /* JSON */
+        pre {
+            background: #f8f9fa;
+            color: #333;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            line-height: 1.6;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        
+        .error-msg {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+            padding: 12px;
+            border-radius: 5px;
+            margin-bottom: 15px;
+        }
+        
+        .success-msg {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+            padding: 12px;
+            border-radius: 5px;
+            margin-bottom: 15px;
+        }
+        
+        .status {
+            padding: 10px;
+            margin-bottom: 15px;
+            min-height: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Proyecto Scraping - API Reddit</h1>
+        
+        <div class="controles">
+            <input type="text" id="subreddit" placeholder="Nombre de subreddit" style="flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 5px; font-size: 14px;">
+            <input type="number" id="limit" placeholder="Numero de posts" value="10" min="1" max="100" style="width: 150px; padding: 10px; border: 1px solid #ddd; border-radius: 5px; font-size: 14px;">
+            <button id="btnCargar" onclick="cargarPosts()">Cargar Posts (Nivel 1)</button>
+            <span id="status" style="margin-left: 15px; color: #666;"></span>
+        </div>
+        
+        <!-- NIVEL 1: Lista de posts (SIEMPRE VISIBLE) -->
+        <div class="seccion-titulo">NIVEL 1: Lista de Posts</div>
+        <div id="posts-container" class="posts-container">
+            <p style="color: #999; text-align: center; padding: 40px;">
+            </p>
+        </div>
+        
+        <!-- NIVEL 2: Detalle del post -->
+        <div id="nivel2-section" class="detail-section">
+            <button class="back-btn" onclick="volverAlNivel1()">← Volver a Lista</button>
+            <div class="seccion-titulo">NIVEL 2: Detalle del Post</div>
+            <div id="detail-header" class="detail-header"></div>
+            <div class="detail-content" id="detail-content"></div>
+        </div>
+        
+        <!-- TABS: Mensajes / Árbol / JSON -->
+        <div class="tabs-container">
+            <div class="tab-buttons">
+                <button class="tab-btn active" onclick="mostrarTab('messages')">Mensajes de Red</button>
+                <button class="tab-btn" onclick="mostrarTab('tree')">Arbol de Datos</button>
+                <button class="tab-btn" onclick="mostrarTab('json')">Texto Plano (JSON)</button>
+            </div>
+            
+            <div id="messages-tab" class="tab-content active">
+                <div class="messages" id="messages"></div>
+            </div>
+            
+            <div id="tree-tab" class="tab-content">
+                <div class="tree" id="tree-container"></div>
+            </div>
+            
+            <div id="json-tab" class="tab-content">
+                <pre id="json-data"></pre>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let datosCompletos = {};
+        
+        function mostrarTab(tabName) {
+            // Ocultar todos los tabs
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            // Mostrar el tab seleccionado
+            document.getElementById(tabName + '-tab').classList.add('active');
+            event.target.classList.add('active');
+        }
+        
+        function addMessage(text, type = 'info') {
+            const messagesDiv = document.getElementById('messages');
+            const msg = document.createElement('div');
+            msg.className = `message ${type}`;
+            msg.textContent = '>' + text;
+            messagesDiv.appendChild(msg);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+        
+        function mostrarJSON(data) {
+            document.getElementById('json-data').textContent = JSON.stringify(data, null, 2);
+        }
+        
+        function mostrarArbol(nodo, nombre = 'root', prefijo = '', esUltimo = true, esRaiz = false) {
+            let resultado = '';
+            const conector = esRaiz ? '' : (esUltimo ? '└── ' : '├── ');
+            let etiqueta = nombre || 'root';
+            
+            if (typeof nodo === 'object' && nodo !== null) {
+                if (Array.isArray(nodo)) {
+                    etiqueta += ' (Array[' + nodo.length + '])';
+                } else {
+                    etiqueta += ' (Object)';
+                }
+            } else {
+                const texto = String(nodo);
+                etiqueta += ': ' + (texto.length > 50 ? texto.substring(0, 50) + '…' : texto);
+            }
+            
+            resultado += '<div class="tree-item">' + prefijo + conector + etiqueta + '</div>\n';
+            
+            if (typeof nodo !== 'object' || nodo === null) {
+                return resultado;
+            }
+            
+            let hijos = [];
+            if (Array.isArray(nodo)) {
+                const limite = Math.min(nodo.length, 5);
+                for (let i = 0; i < limite; i++) {
+                    hijos.push({ key: '[' + i + ']', value: nodo[i] });
+                }
+                if (nodo.length > 5) {
+                    hijos.push({ key: '... (' + (nodo.length - 5) + ' más)', value: null });
+                }
+            } else {
+                Object.keys(nodo).forEach(key => {
+                    hijos.push({ key: key, value: nodo[key] });
+                });
+            }
+            
+            const nuevoPrefijo = prefijo + (esRaiz ? '' : (esUltimo ? '    ' : '│   '));
+            
+            hijos.forEach((hijo, index) => {
+                const esUltimoHijo = index === hijos.length - 1;
+                resultado += mostrarArbol(hijo.value, hijo.key, nuevoPrefijo, esUltimoHijo, false);
+            });
+            
+            return resultado;
+        }
+
+        /*    function imprimirArbol(nodo, prefijo = "", esUltimo = true, esRaiz = false) {
+      let resultado = "";
+
+// se añade el dibujo con UTF8 de las lineas, usa parametros esUltimo esRaiz
+// se crea el prefijo en cada iteraccion por eso no usa nivel 
+
+	// Solo dibujar conector si NO es la raíz
+      if (!esRaiz) {
+        const conector = esUltimo ? "└── " : "├── ";
+        resultado += prefijo + conector;
+      } else {
+        resultado += prefijo;
+      }
+
+      if (nodo.nodeType === Node.ELEMENT_NODE) {
+        resultado += `<${nodo.nodeName}>` + "\n";
+
+        const hijos = Array.from(nodo.childNodes).filter(n =>
+          n.nodeType === Node.ELEMENT_NODE ||
+          (n.nodeType === Node.TEXT_NODE && n.nodeValue.trim() !== "")
+        );
+
+        const nuevoPrefijo = prefijo + (esRaiz ? "" : (esUltimo ? "    " : "│   ")); // indentacion y nodo
+
+        hijos.forEach((hijo, index) => {
+          const ultimo = index === hijos.length - 1;
+          resultado += imprimirArbol(hijo, nuevoPrefijo, ultimo, false); // llamada recursiva
+        });
+      }
+
+      if (nodo.nodeType === Node.TEXT_NODE) {
+        resultado += nodo.nodeValue.trim() + "\n";
+      }
+
+      return resultado;
+    } */
+
+        
+        
+        function cargarPosts() {
+            const btn = document.getElementById('btnCargar');
+            const status = document.getElementById('status');
+            const container = document.getElementById('posts-container');
+            const subreddit = document.getElementById('subreddit').value.trim();
+            const limit = document.getElementById('limit').value;
+            
+            if (!subreddit) {
+                status.textContent = 'Escribe un subreddit';
+                return;
+            }
+            
+            btn.disabled = true;
+                status.textContent = 'Cargando posts...';
+            container.innerHTML = '<div class="loading">Cargando posts de r/' + subreddit + '...</div>';
+            
+            document.getElementById('messages').innerHTML = '';
+            addMessage('SOLICITUD NIVEL 1: GET /r/' + subreddit + '.json?limit=' + limit, 'request');
+            
+            const callbackName = `callback_${Date.now()}`;
+            
+            window[callbackName] = function(data) {
+                try {
+                    addMessage('RESPUESTA NIVEL 1: JSON recibido con ' + data.data.children.length + ' items', 'response');
+                    
+                    if (!data.data || !data.data.children) {
+                        throw new Error('Formato inválido');
+                    }
+                    
+                    const posts = data.data.children.map(child => child.data);
+                    
+                    if (posts.length === 0) {
+                        status.innerHTML = '<div class="error-msg">No se encontraron posts</div>';
+                        return;
+                    }
+                    
+                    datosCompletos.nivel1 = {
+                        subreddit: 'programming',
+                        posts_count: posts.length,
+                        timestamp: new Date().toISOString(),
+                        datos: posts
+                    };
+                    
+                    mostrarJSON(datosCompletos.nivel1);
+                    document.getElementById('tree-container').innerHTML = mostrarArbol(datosCompletos.nivel1, 'nivel1', '', true, true);
+                    
+                    container.innerHTML = posts.map((post, idx) => `
+                        <div class="post-card" onclick="cargarDetalle(${idx}, '${post.id}')">
+                            <div class="post-title">${escapeHtml(post.title)}</div>
+                            <div class="post-meta"> Por u/${post.author} en r/${post.subreddit}</div>
+                            <div class="post-stats">
+                                <span class="badge">Upvotes ${post.score}</span>
+                                <span class="badge">Comentarios ${post.num_comments}</span>
+                            </div>
+                        </div>
+                    `).join('');
+                    
+                    status.innerHTML = '<div class="success-msg">' + posts.length + ' posts cargados</div>';
+                    
+                } catch (err) {
+                    addMessage('ERROR NIVEL 1: ' + err.message, 'error');
+                    status.innerHTML = '<div class="error-msg">Error: ' + err.message + '</div>';
+                } finally {
+                    const script = document.querySelector(`script[src*="${callbackName}"]`);
+                    if (script) document.body.removeChild(script);
+                    delete window[callbackName];
+                    btn.disabled = false;
+                }
+            };
+            
+            const script = document.createElement('script');
+            const url = `https://www.reddit.com/r/${subreddit}.json?limit=${limit}&jsonp=${callbackName}`;
+            script.src = url;
+            script.onerror = () => {
+                addMessage('ERROR NIVEL 1: Fallo al cargar desde Reddit', 'error');
+                status.innerHTML = '<div class="error-msg">Error al cargar datos</div>';
+                btn.disabled = false;
+                if (script.parentNode) document.body.removeChild(script);
+                delete window[callbackName];
+            };
+            document.body.appendChild(script);
+        }
+        
+        function cargarDetalle(index, postId) {
+            const post = datosCompletos.nivel1.datos[index];
+            const nivel2 = document.getElementById('nivel2-section');
+            const detailHeader = document.getElementById('detail-header');
+            const detailContent = document.getElementById('detail-content');
+            
+            addMessage('SOLICITUD NIVEL 2: GET /r/programming/comments/' + postId, 'request');
+            
+            detailHeader.innerHTML = `<h3>${escapeHtml(post.title)}</h3>`;
+            detailContent.innerHTML = `
+                <div class="post-meta" style="margin-bottom: 15px;">
+                    <strong>Autor:</strong> u/${post.author}<br>
+                    <strong>Publicado:</strong> ${new Date(post.created_utc * 1000).toLocaleString('es-ES')}<br>
+                    <strong>Puntos:</strong> ${post.score}<br>
+                    <strong>Comentarios:</strong> ${post.num_comments}<br>
+                </div>
+                ${post.selftext ? `<div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 15px; line-height: 1.6; white-space: pre-wrap;">${escapeHtml(post.selftext)}</div>` : '<p> </p>'}
+            `;
+            
+            datosCompletos.nivel2 = {
+                post_id: post.id,
+                post_title: post.title,
+                author: post.author,
+                score: post.score,
+                comments_count: post.num_comments,
+                created: new Date(post.created_utc * 1000).toISOString(),
+                timestamp_nivel2: new Date().toISOString()
+            };
+            
+            addMessage('RESPUESTA NIVEL 2: Post cargado con ' + post.num_comments + ' comentarios', 'response');
+            mostrarJSON(datosCompletos);
+            document.getElementById('tree-container').innerHTML = mostrarArbol(datosCompletos, 'datosCompletos', '', true, true);
+            
+            nivel2.classList.add('active');
+            nivel2.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+        
+        function volverAlNivel1() {
+            document.getElementById('nivel2-section').classList.remove('active');
+        }
+        
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text || '';
+            return div.innerHTML;
+        }
+    </script>
+</body>
+</html>
