@@ -357,11 +357,28 @@
             event.target.classList.add('active');
         }
         
-        function addMessage(text, type = 'info') {
+        function addMessage(text, type = 'info', details = null) {
             const messagesDiv = document.getElementById('messages');
             const msg = document.createElement('div');
             msg.className = `message ${type}`;
-            msg.textContent = '>' + text;
+
+            const header = document.createElement('div');
+            header.textContent = '> ' + text;
+            msg.appendChild(header);
+
+            if (details) {
+                const pre = document.createElement('pre');
+                pre.style.marginTop = '6px';
+                pre.style.background = '#fff';
+                pre.style.border = '1px solid #eee';
+                pre.style.maxHeight = '220px';
+                pre.style.overflowY = 'auto';
+                pre.textContent = typeof details === 'string'
+                    ? details
+                    : JSON.stringify(details, null, 2);
+                msg.appendChild(pre);
+            }
+
             messagesDiv.appendChild(msg);
             messagesDiv.scrollTop = messagesDiv.scrollHeight;
         }
@@ -473,9 +490,18 @@
             container.innerHTML = '<div class="loading">Cargando posts de r/' + subreddit + '...</div>';
             
             document.getElementById('messages').innerHTML = '';
-            addMessage('SOLICITUD NIVEL 1: GET /r/' + subreddit + '.json?limit=' + limit, 'request');
+            const requestUrl = 'https://www.reddit.com/r/' + subreddit + '.json?limit=' + limit;
+            const requestMeta = {
+                nivel: 1,
+                metodo: 'GET',
+                endpoint: '/r/' + subreddit + '.json',
+                query: { limit: Number(limit) },
+                url: requestUrl,
+                timestamp: new Date().toISOString()
+            };
+            addMessage('SOLICITUD NIVEL 1: GET /r/' + subreddit + '.json?limit=' + limit, 'request', requestMeta);
             
-            const callbackName = 'redditCallback_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+            const callbackName = 'redditCallback_' + Date.now();
             let scriptElement = null;
             let timeoutId = null;
             
@@ -493,11 +519,28 @@
                 btn.disabled = false;
             }
             
+            const startedAt = performance.now();
+
             window[callbackName] = function(data) {
                 cleanup();
                 
                 try {
-                    addMessage('RESPUESTA NIVEL 1: JSON recibido con ' + data.data.children.length + ' items', 'response');
+                    const elapsedMs = Math.round(performance.now() - startedAt);
+                    const children = (data && data.data && data.data.children) ? data.data.children : [];
+                    const responseMeta = {
+                        nivel: 1,
+                        status: 'OK',
+                        elapsed_ms: elapsedMs,
+                        items: children.length,
+                        sample_post: children[0] ? {
+                            id: children[0].data && children[0].data.id,
+                            title: children[0].data && children[0].data.title,
+                            author: children[0].data && children[0].data.author,
+                            score: children[0].data && children[0].data.score
+                        } : null,
+                        data_keys: data && data.data ? Object.keys(data.data) : []
+                    };
+                    addMessage('RESPUESTA NIVEL 1: JSON recibido con ' + children.length + ' items', 'response', responseMeta);
                     
                     if (!data.data || !data.data.children) {
                         throw new Error('Formato inválido');
@@ -535,7 +578,11 @@
                     status.innerHTML = '<div class="success-msg">' + posts.length + ' posts cargados</div>';
                     
                 } catch (err) {
-                    addMessage('ERROR NIVEL 1: ' + err.message, 'error');
+                    addMessage('ERROR NIVEL 1: ' + err.message, 'error', {
+                        nivel: 1,
+                        status: 'PARSE_ERROR',
+                        message: err.message
+                    });
                     status.innerHTML = '<div class="error-msg">Error: ' + err.message + '</div>';
                     container.innerHTML = '<p style="color: #999; text-align: center; padding: 40px;">Error al procesar datos</p>';
                 }
@@ -543,7 +590,12 @@
             
             timeoutId = setTimeout(function() {
                 cleanup();
-                addMessage('ERROR NIVEL 1: Timeout - no se recibió respuesta', 'error');
+                addMessage('ERROR NIVEL 1: Timeout - no se recibió respuesta', 'error', {
+                    nivel: 1,
+                    status: 'TIMEOUT',
+                    timeout_ms: 20000,
+                    url: requestUrl
+                });
                 status.innerHTML = '<div class="error-msg">Timeout: no se recibió respuesta</div>';
                 container.innerHTML = '<p style="color: #999; text-align: center; padding: 40px;">Error al cargar datos</p>';
             }, 20000);
@@ -557,7 +609,11 @@
             scriptElement.src = url;
             scriptElement.onerror = function() {
                 cleanup();
-                addMessage('ERROR NIVEL 1: Fallo al cargar desde Reddit', 'error');
+                addMessage('ERROR NIVEL 1: Fallo al cargar desde Reddit', 'error', {
+                    nivel: 1,
+                    status: 'NETWORK_ERROR',
+                    url: url
+                });
                 status.innerHTML = '<div class="error-msg">Error al cargar datos desde Reddit</div>';
                 container.innerHTML = '<p style="color: #999; text-align: center; padding: 40px;">Error al cargar datos</p>';
             };
@@ -571,7 +627,15 @@
             var detailHeader = document.getElementById('detail-header');
             var detailContent = document.getElementById('detail-content');
             
-            addMessage('SOLICITUD NIVEL 2: GET /r/programming/comments/' + postId, 'request');
+            const detailRequestMeta = {
+                nivel: 2,
+                metodo: 'GET',
+                endpoint: '/r/' + post.subreddit + '/comments/' + postId,
+                post_id: postId,
+                timestamp: new Date().toISOString(),
+                note: 'Detalle construido con datos ya descargados en Nivel 1'
+            };
+            addMessage('SOLICITUD NIVEL 2: GET /r/' + post.subreddit + '/comments/' + postId, 'request', detailRequestMeta);
             
             detailHeader.innerHTML = '<h3>' + escapeHtml(post.title) + '</h3>';
             
@@ -600,7 +664,16 @@
                 timestamp_nivel2: new Date().toISOString()
             };
             
-            addMessage('RESPUESTA NIVEL 2: Post cargado con ' + post.num_comments + ' comentarios', 'response');
+            addMessage('RESPUESTA NIVEL 2: Post cargado con ' + post.num_comments + ' comentarios', 'response', {
+                nivel: 2,
+                status: 'OK',
+                post_id: post.id,
+                title: post.title,
+                author: post.author,
+                score: post.score,
+                comments_count: post.num_comments,
+                created_utc: post.created_utc
+            });
             mostrarJSON(datosCompletos);
             document.getElementById('tree-container').innerHTML = mostrarArbol(datosCompletos, 'datosCompletos', '', true, true);
             
